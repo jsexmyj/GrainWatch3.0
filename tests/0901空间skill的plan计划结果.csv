@@ -1,0 +1,4 @@
+﻿difficulty,question,tool_calls,completion,plan_id,step_count
+low,请直接使用工具把点数据加载、缓冲10m并输出结果。,vector_load -> vector_reproject -> buffer -> vector_write,3/3 (100%),spatial_analysis_plan_1,4
+medium,请完成行政边界的缓冲结果输出，步骤由你自己补全。,vector_load -> vector_reproject -> buffer -> vector_write,4/4 (100%),admin_boundary_buffer_plan,4
+high,业务场景：评估空气质量监测点周边 1km 影响区，并考虑道路要素参与分析准备。,vector_load -> vector_reproject -> buffer -> vector_load -> vector_write,4/4 (100%),air_quality_monitoring_analysis_plan,5

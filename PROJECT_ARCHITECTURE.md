@@ -38,7 +38,7 @@ backend/
 
 ├── api/
 │
-├── modules/
+├── agent/
 │ ├── master_agent/
 │ ├── spatial_agent/
 │ └── knowledge_agent/
@@ -90,7 +90,7 @@ API 只负责通信，不负责业务。
 
 ---
 
-## modules/
+## agent/
 
 系统核心。
 
@@ -108,7 +108,7 @@ Knowledge Agent
 
 每个 Agent 只负责自己的职责。
 
-### modules/master_agent/
+### agent/master_agent/
 
 职责：
 
@@ -124,7 +124,7 @@ Knowledge Agent
 
 ---
 
-### modules/spatial_agent/
+### agent/spatial_agent/
 
 职责：
 
@@ -149,7 +149,7 @@ Knowledge Agent
 
 ---
 
-### modules/knowledge_agent/
+### agent/knowledge_agent/
 
 职责：
 

@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -65,7 +65,7 @@ class BaseSkillTask(BaseTask):
 
     skill_name: str = Field(description="目标 Skill 名称，例如 spatial_skill")
     parent_agent_task_id: str = Field(description="所属 AgentTask 的 task_id")
-    allowed_tools: list[str] = Field(
+    allowed_tools: Optional[list[str]] = Field(
         default_factory=list,
         description="该 Skill 本次允许调用的工具名称；为空表示由 Skill 自行决定",
     )
