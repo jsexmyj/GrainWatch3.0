@@ -22,7 +22,7 @@ def build_spatial_planning_prompt(
                     "tool_name": "registered tool name",
                     "arguments": "tool input object",
                     "output_key": "optional context key",
-                    "on_failure": "stop or continue",
+                    "on_failure": "raise or retry or warn",
                 }
             ],
         },

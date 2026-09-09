@@ -40,10 +40,6 @@ class VectorReprojectInput(BaseModel):
         3,
         description="mode='auto' 时使用，高斯克吕格分带宽度，支持 3 度带或 6 度带，默认 3 度带。",
     )
-    ellipsoid: str = Field(
-        "CGCS2000",
-        description="mode='auto' 时使用，参考椭球体名称（pyproj 可识别），默认 'CGCS2000'。",
-    )
 
 
 # ==========================================
@@ -97,15 +93,14 @@ class VectorReprojectTool(BaseTool):
                 )
                 target_crs = build_gauss_kruger_crs(
                     longitude=longitude,
-                    latitude=latitude,
                     zone_width=input_data.zone_width,
-                    ellipsoid=input_data.ellipsoid,
                 )
                 result_gdf = gdf.to_crs(target_crs)
 
                 metadata.update(
                     {
-                        "target_crs": target_crs.to_proj4(),
+                        "target_crs": str(target_crs),
+                        "target_epsg": target_crs.to_epsg(),
                         "zone": zone,
                         "zone_width": input_data.zone_width,
                         "central_meridian": central_meridian,

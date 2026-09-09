@@ -13,8 +13,10 @@ from pydantic import BaseModel, Field, ConfigDict
 from pyproj import CRS
 
 from backend.infrastructure.tool_manager.base import BaseTool, ToolResult
+from backend.utils.logger import get_logger
 
 ZoneWidth = Literal[3, 6]
+logger = get_logger(__name__)
 
 
 # ==========================================
@@ -38,26 +40,45 @@ def compute_gauss_kruger_zone(
     return zone, float(central_meridian)
 
 
-def build_gauss_kruger_crs(
-    longitude: float,
-    latitude: float = 0.0,
-    zone_width: ZoneWidth = 3,
-    ellipsoid: str = "CGCS2000",
-) -> CRS:
+def compute_cgcs2000_gauss_kruger_epsg(
+    longitude: float, zone_width: ZoneWidth = 3
+) -> int:
     """
-    根据经纬度构建高斯克吕格投影坐标系（横轴墨卡托，比例因子为 1）。
+    根据经度和分带宽度计算 CGCS2000 高斯克吕格投影的 EPSG 编码。
 
-    与 UTM 的区别：比例因子固定为 1（UTM 为 0.9996），常用于中国国家/地方坐标系。
+    - 6 度带: EPSG 4491-4501 (zone 13-23)
+    - 3 度带: EPSG 4513-4533 (CM 75E-135E)
     """
     zone, central_meridian = compute_gauss_kruger_zone(longitude, zone_width)
-    # 高斯克吕格通常用于北半球（中国境内），若为南半球坐标点则加上假北坐标偏移
-    false_northing = 0 if latitude >= 0 else 10_000_000
 
-    proj4 = (
-        f"+proj=tmerc +lat_0=0 +lon_0={central_meridian} +k=1 +x_0=500000 "
-        f"+y_0={false_northing} +ellps={ellipsoid} +units=m +no_defs"
-    )
-    return CRS.from_proj4(proj4)
+    if zone_width == 6:
+        if not (13 <= zone <= 23):
+            logger.warning(
+                f"经度 {longitude} 超出 CGCS2000 6 度带常用范围，无法映射 EPSG（zone={zone}）"
+            )
+        return 4491 + (zone - 13)
+
+    if central_meridian % 3 != 0:
+        raise ValueError(
+            f"计算得到非法中央经线 {central_meridian}，无法映射 3 度带 EPSG"
+        )
+
+    if not (75 <= central_meridian <= 135):
+        logger.warning(
+            f"经度 {longitude} 超出 CGCS2000 3 度带常用范围，无法映射 EPSG（CM={central_meridian}E）"
+        )
+    return 4513 + int((central_meridian - 75) // 3)
+
+
+def build_gauss_kruger_crs(
+    longitude: float,
+    zone_width: ZoneWidth = 3,
+) -> CRS:
+    """
+    根据经度构建 CGCS2000 高斯克吕格投影坐标系（基于 EPSG 编码）。
+    """
+    epsg = compute_cgcs2000_gauss_kruger_epsg(longitude, zone_width)
+    return CRS.from_epsg(epsg)
 
 
 # # ==========================================

@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.agent.base_schemas import BaseSkillTask
 from backend.infrastructure.tool_manager.base import ToolResult
@@ -52,9 +52,24 @@ class ToolStep(BaseModel):
     output_key: str | None = Field(
         default=None, description="将本步骤 ToolResult 写入运行时上下文的键。"
     )
-    on_failure: Literal["stop", "continue"] = Field(
-        default="stop", description="本步骤失败后的处理策略。"
+    on_failure: Literal["raise", "retry", "warn", "stop", "continue"] = Field(
+        default="raise",
+        description=(
+            "本步骤失败后的处理策略。"
+            "raise=立即抛错；retry=可恢复错误进行重试后抛错；"
+            "warn=记录告警并继续。"
+            "兼容旧值：stop->raise，continue->warn。"
+        ),
     )
+
+    @field_validator("on_failure", mode="before")
+    @classmethod
+    def normalize_on_failure(cls, value: str) -> str:
+        legacy_mapping = {
+            "stop": "raise",
+            "continue": "warn",
+        }
+        return legacy_mapping.get(value, value)
 
 
 class ToolPlan(BaseModel):
@@ -83,3 +98,4 @@ class ExecutionResult(BaseModel):
     results: list[ToolResult] = Field(default_factory=list)
     context: dict[str, Any] = Field(default_factory=dict)
     failed_step_id: str | None = None
+    warnings: list[str] = Field(default_factory=list)

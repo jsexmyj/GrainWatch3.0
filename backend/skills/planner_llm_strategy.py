@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field
 
 from backend.utils.logger import get_logger
 
-
 logger = get_logger(__name__)
 
 
@@ -74,8 +73,7 @@ class PlanLLMStrategy:
 
         if isinstance(output, dict):
             logger.info(
-                "llm_plan_generated provider=%s model_version=%s mode=%s elapsed_ms=%.2f output_type=dict",
-                self.config.provider,
+                "llm_plan_generated model_version=%s mode=%s elapsed_ms=%.2f output_type=dict",
                 self.config.model,
                 self.config.mode,
                 (time.perf_counter() - started_at) * 1000,

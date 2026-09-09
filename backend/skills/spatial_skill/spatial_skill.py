@@ -76,6 +76,7 @@ class SpatialSkill:
                 f"plan_id={plan_id}",
                 f"steps={len(execution.results)}",
                 f"success_rate={confidence:.2f}",
+                *[f"warning={warning}" for warning in execution.warnings],
             ],
             output_refs=[],
             error=(
@@ -89,6 +90,7 @@ class SpatialSkill:
                 "plan_id": plan_id,
                 "success": execution.success,
                 "failed_step_id": execution.failed_step_id,
+                "warnings": execution.warnings,
                 "final_metadata": final_result.metadata if final_result else {},
             },
         )
