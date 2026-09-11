@@ -34,9 +34,9 @@ class SpatialSkillEvidence(BaseSkillEvidence):
         default_factory=dict,
         description="证据覆盖的空间范围，如 bbox、crs、区域名称",
     )
-    analysis_summary: dict[str, Any] = Field(
+    operation_summary: dict[str, Any] = Field(
         default_factory=dict,
-        description="空间统计摘要信息，如面积总和、对象数量、空间关系计数。",
+        description="空间操作的简要描述，如 缓冲距离、空间关系、空间关系参数等",
     )
 
 

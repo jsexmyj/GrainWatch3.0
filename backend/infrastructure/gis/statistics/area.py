@@ -48,6 +48,14 @@ class AreaTool(BaseTool):
     input_model = AreaInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"面积计算失败: {result.error or '未知错误'}"
+
+        field_name = result.metadata.get("area_field_name", "area")
+        feature_count = result.metadata.get("feature_count", "未知")
+        return f"已为{feature_count}个要素计算面积并写入字段 {field_name}。"
+
     async def execute(self, input_data: AreaInput) -> ToolResult:
         """
         原子级面积计算核心逻辑：直接在内存中基于 GeoDataFrame 执行

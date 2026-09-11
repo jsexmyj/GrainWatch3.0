@@ -55,6 +55,14 @@ class VectorWriteTool(BaseTool):
     input_model = VectorWriteInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"矢量数据导出失败: {result.error or '未知错误'}"
+
+        file_name = result.metadata.get("file_name", "未知文件")
+        feature_count = result.metadata.get("feature_count", "未知")
+        return f"已导出{feature_count}个要素到{file_name}。"
+
     async def execute(self, input_data: VectorWriteInput) -> ToolResult:
         try:
             gdf = input_data.gdf
@@ -93,6 +101,8 @@ class VectorWriteTool(BaseTool):
                 metadata={
                     "feature_count": len(gdf),
                     "target_type": target_type,
+                    "file_name": os.path.basename(actual_path),
+                    "file_path": actual_path,
                 },
             )
 

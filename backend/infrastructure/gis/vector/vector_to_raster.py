@@ -89,6 +89,15 @@ class VectorToRasterTool(BaseTool):
     input_model = VectorToRasterInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"矢量转栅格失败: {result.error or '未知错误'}"
+
+        width = result.metadata.get("width", "未知")
+        height = result.metadata.get("height", "未知")
+        feature_count = result.metadata.get("feature_count", "未知")
+        return f"已将{feature_count}个矢量要素栅格化，输出栅格尺寸为{width}x{height}。"
+
     async def execute(self, input_data: VectorToRasterInput) -> ToolResult:
         """
         原子级矢量转栅格核心逻辑：使用 rasterio 依据几何范围栅格化并写出 GeoTIFF

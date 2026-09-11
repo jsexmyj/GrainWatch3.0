@@ -70,6 +70,15 @@ class RasterClipTool(BaseTool):
     input_model = RasterClipInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"影像裁剪失败: {result.error or '未知错误'}"
+
+        width = result.metadata.get("width", "未知")
+        height = result.metadata.get("height", "未知")
+        file_name = getattr(result.data, "file_name", "输出影像")
+        return f"已完成影像裁剪，生成{file_name}，尺寸为{width}x{height}。"
+
     async def execute(self, input_data: RasterClipInput) -> ToolResult:
         """
         原子级影像裁剪核心逻辑：使用 rasterio.mask 依据矢量或栅格范围裁剪原始影像

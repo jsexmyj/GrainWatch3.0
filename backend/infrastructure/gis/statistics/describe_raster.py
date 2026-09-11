@@ -53,6 +53,15 @@ class DescribeRasterTool(BaseTool):
     input_model = DescribeRasterInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"栅格元信息读取失败: {result.error or '未知错误'}"
+
+        width = result.metadata.get("width", "未知")
+        height = result.metadata.get("height", "未知")
+        band_count = result.metadata.get("band_count", "未知")
+        return f"已读取栅格元信息：尺寸{width}x{height}，波段数为{band_count}。"
+
     async def execute(self, input_data: DescribeRasterInput) -> ToolResult:
         """
         原子级栅格元信息读取核心逻辑：使用 rasterio 读取基础信息、地理信息及可选统计信息

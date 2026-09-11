@@ -53,6 +53,16 @@ class FieldStatisticsTool(BaseTool):
     input_model = FieldSummaryInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"汇总统计失败: {result.error or '未知错误'}"
+
+        fields = result.metadata.get("fields", [])
+        group_by = result.metadata.get("group_by")
+        if group_by:
+            return f"已按字段 {group_by} 完成属性汇总统计，统计字段数为{len(fields)}。"
+        return f"已完成属性汇总统计，统计字段数为{len(fields)}。"
+
     async def execute(self, input_data: FieldSummaryInput) -> ToolResult:
         """
         原子级汇总统计核心逻辑：直接在内存中基于 GeoDataFrame 执行

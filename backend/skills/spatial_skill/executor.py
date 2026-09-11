@@ -216,6 +216,7 @@ class SpatialExecutor:
             tool_name=step.tool_name,
             result_type="unknown",
             data=None,
+            fact=f"工具 {step.tool_name} 在达到最大重试次数后仍执行失败。",
             error="达到最大重试次数后仍失败",
         )
 

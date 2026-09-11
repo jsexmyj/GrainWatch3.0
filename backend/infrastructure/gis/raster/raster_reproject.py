@@ -81,6 +81,15 @@ class RasterReprojectTool(BaseTool):
     input_model = RasterReprojectInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"栅格重投影失败: {result.error or '未知错误'}"
+
+        source = result.metadata.get("source", "未知来源")
+        target = result.metadata.get("target_crs", "未知坐标系")
+        resampling = result.metadata.get("resampling", "nearest")
+        return f"已将栅格从{source}重投影到{target}（重采样方法：{resampling}）。"
+
     async def execute(self, input_data: RasterReprojectInput) -> ToolResult:
         """
         原子级栅格重投影核心逻辑：使用 rasterio.warp 计算目标网格并逐波段重投影

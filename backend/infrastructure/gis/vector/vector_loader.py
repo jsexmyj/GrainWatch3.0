@@ -15,7 +15,7 @@ class VectorLoadInput(BaseModel):
         ...,
         description="数据源路径。可以是本地文件绝对路径、相对路径，或数据库连接 URI（如 postgresql://user:pwd@host:port/db）",
     )
-    source_type:     Literal["auto", "shp", "geojson", "postgres", "postgresql"] = Field(
+    source_type: Literal["auto", "shp", "geojson", "postgres", "postgresql"] = Field(
         default="auto",
         description="数据格式类型。auto 表示根据后缀名或 URI 自动推断。",
     )
@@ -33,6 +33,17 @@ class VectorLoadTool(BaseTool):
     )
     input_model = VectorLoadInput
     output_model = ToolResult
+
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"矢量数据加载失败: {result.error or '未知错误'}"
+
+        source_name = result.metadata.get("source", "").split("/")[-1]
+        source_type = result.metadata.get("source_type", "unknown")
+        feature_count = result.metadata.get("feature_count", "未知")
+        if source_name:
+            return f"已从{source_name}文件加载{source_type}数据，共{feature_count}个要素。"
+        return f"已加载{source_type}数据，共{feature_count}个要素。"
 
     async def execute(self, input_data: VectorLoadInput) -> ToolResult:
         try:

@@ -17,13 +17,15 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.infrastructure.llm.plan_strategy_factory import (
     create_siliconflow_plan_strategy,
 )
+from backend.infrastructure.gis.base_schemas import FileResource
+from backend.infrastructure.tool_manager.base import ToolResult
 from backend.infrastructure.tool_manager.loader import ToolLoader
 from backend.infrastructure.tool_manager.manager import ToolManager
 from backend.infrastructure.tool_manager.registry import ToolRegistry
 from backend.skills.planner_llm_strategy import PlanLLMConfig
 from backend.skills.spatial_skill.executor import SpatialExecutor
 from backend.skills.spatial_skill.planner import SpatialSkillPlanner
-from backend.skills.spatial_skill.schemas import SpatialSkillTask
+from backend.skills.spatial_skill.schemas import ExecutionResult, SpatialSkillTask
 from backend.skills.spatial_skill.spatial_skill import SpatialSkill
 from backend.utils.paths import PATHS
 
@@ -93,6 +95,53 @@ def make_task(
 # ==========================================
 # 测试用例主体
 # ==========================================
+
+
+def test_build_evidence_separates_agent_payload_from_trace(test_dirs):
+    """Agent 只接收结论、关键事实和落盘结果，不接收完整工具追溯。"""
+    task = make_task("evidence-contract-task", "输出缓冲结果", "low", test_dirs)
+    execution = ExecutionResult(
+        success=True,
+        results=[
+            ToolResult(
+                success=True,
+                tool_name="buffer",
+                result_type="vector",
+                data=None,
+                metadata={"distance_applied": 10, "internal": "hidden"},
+            ),
+            ToolResult(
+                success=True,
+                tool_name="vector_write",
+                result_type="file",
+                data=FileResource(
+                    path="data/运行结果/buffer.shp",
+                    file_name="buffer.shp",
+                    format="shp",
+                    metadata={"feature_count": 3},
+                ),
+                metadata={"feature_count": 3},
+            ),
+        ],
+    )
+
+    evidence = SpatialSkill.build_evidence(task, execution)
+    agent_payload = evidence.model_dump()
+
+    assert evidence.output_refs[0].data_path == "data/运行结果/buffer.shp"
+    assert evidence.facts == [
+        "已对目标空间对象构建10米缓冲区。",
+        "已生成空间成果文件 buffer.shp。",
+    ]
+    assert evidence.summary == "；".join(evidence.facts)
+    assert evidence.operation_summary["operations"][0]["operation"] == "buffer"
+    assert evidence.operation_summary["operations"][1]["operation"] == "vector_write"
+    assert evidence.operation_summary["result"]["output_ref_ids"] == [
+        "data/运行结果/buffer.shp"
+    ]
+    assert "plan_id" not in evidence.operation_summary
+    assert "warnings" not in evidence.operation_summary
+    assert "internal" not in agent_payload
 
 
 @pytest.mark.asyncio
@@ -313,7 +362,7 @@ async def test_05_spatial_skill_execute_end_to_end(fresh_registry, test_dirs):
         test_dirs,
     )
     evidence = await spatial_skill.execute(task)
-
+    print(evidence)
     assert evidence.source_skill == "spatial_skill"
     assert evidence.status in ["success", "partial"]
     assert len(evidence.facts) > 0
@@ -338,7 +387,7 @@ if __name__ == "__main__":
             "-s",
             "--tb=short",
             "-k",
-            "test_04_execute_generated_toolplan",
+            "test_05_spatial_skill_execute_end_to_end",
         ]
     )
 

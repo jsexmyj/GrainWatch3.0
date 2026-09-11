@@ -74,6 +74,14 @@ class RasterToVectorTool(BaseTool):
     input_model = RasterToVectorInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"栅格转矢量失败: {result.error or '未知错误'}"
+
+        feature_count = result.metadata.get("feature_count", "未知")
+        unique_count = result.metadata.get("unique_value_count", "未知")
+        return f"已完成栅格矢量化，生成{feature_count}个要素（唯一值数量 {unique_count}）。"
+
     async def execute(self, input_data: RasterToVectorInput) -> ToolResult:
         """
         原子级栅格转矢量核心逻辑：使用 rasterio 读取栅格并矢量化为多边形

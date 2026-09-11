@@ -54,6 +54,15 @@ class TopNTool(BaseTool):
     input_model = TopNInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"TopN 提取失败: {result.error or '未知错误'}"
+
+        field = result.metadata.get("field", "未知字段")
+        order = result.metadata.get("order", "desc")
+        n = result.metadata.get("n", "未知")
+        return f"已按字段 {field}（{order}）提取前 {n} 条空间要素。"
+
     async def execute(self, input_data: TopNInput) -> ToolResult:
         """
         原子级 TopN 提取核心逻辑：直接在内存中基于 GeoDataFrame 执行

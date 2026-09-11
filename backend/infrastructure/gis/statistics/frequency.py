@@ -53,6 +53,14 @@ class FrequencyTool(BaseTool):
     input_model = FrequencyInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"频数统计失败: {result.error or '未知错误'}"
+
+        field = result.metadata.get("field", "未知字段")
+        unique_values = result.metadata.get("unique_values", "未知")
+        return f"已完成字段 {field} 的频数统计，共识别{unique_values}个类别。"
+
     async def execute(self, input_data: FrequencyInput) -> ToolResult:
         """
         原子级频数统计核心逻辑：直接在内存中基于 GeoDataFrame 执行

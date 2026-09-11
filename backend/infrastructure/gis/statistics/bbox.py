@@ -42,6 +42,16 @@ class BBoxTool(BaseTool):
     input_model = BBoxInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"边界范围读取失败: {result.error or '未知错误'}"
+
+        xmin = result.metadata.get("xmin", "未知")
+        ymin = result.metadata.get("ymin", "未知")
+        xmax = result.metadata.get("xmax", "未知")
+        ymax = result.metadata.get("ymax", "未知")
+        return f"已提取空间范围 bbox=({xmin}, {ymin}, {xmax}, {ymax})。"
+
     async def execute(self, input_data: BBoxInput) -> ToolResult:
         """
         原子级边界范围读取核心逻辑：根据输入类型分别解析矢量或栅格数据的边界

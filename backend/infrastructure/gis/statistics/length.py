@@ -48,6 +48,14 @@ class LengthTool(BaseTool):
     input_model = LengthInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"长度计算失败: {result.error or '未知错误'}"
+
+        field_name = result.metadata.get("length_field_name", "length")
+        feature_count = result.metadata.get("feature_count", "未知")
+        return f"已为{feature_count}个要素计算长度并写入字段 {field_name}。"
+
     async def execute(self, input_data: LengthInput) -> ToolResult:
         """
         原子级长度计算核心逻辑：直接在内存中基于 GeoDataFrame 执行

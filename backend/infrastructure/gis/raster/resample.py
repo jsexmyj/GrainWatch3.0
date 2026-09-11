@@ -82,6 +82,15 @@ class ResampleTool(BaseTool):
     input_model = ResampleInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"栅格重采样失败: {result.error or '未知错误'}"
+
+        width = result.metadata.get("width", "未知")
+        height = result.metadata.get("height", "未知")
+        resampling = result.metadata.get("resampling", "nearest")
+        return f"已完成栅格重采样，输出尺寸为{width}x{height}，方法为{resampling}。"
+
     async def execute(self, input_data: ResampleInput) -> ToolResult:
         """
         原子级栅格重采样核心逻辑：在同一坐标系下按分辨率或目标行列数重新采样像元

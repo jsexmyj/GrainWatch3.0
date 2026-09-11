@@ -63,6 +63,14 @@ class VectorReprojectTool(BaseTool):
     input_model = VectorReprojectInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"矢量投影失败: {result.error or '未知错误'}"
+
+        source_crs = result.metadata.get("source_crs", "未知坐标系")
+        target_crs = result.metadata.get("target_crs", "未知坐标系")
+        return f"已完成矢量重投影，坐标系从{source_crs}转换为{target_crs}。"
+
     async def execute(self, input_data: VectorReprojectInput) -> ToolResult:
         """
         原子级矢量投影核心逻辑：manual 模式直接 to_crs，auto 模式先探测坐标系再转换

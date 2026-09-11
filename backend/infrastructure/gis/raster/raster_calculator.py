@@ -84,6 +84,15 @@ class RasterCalculatorTool(BaseTool):
     input_model = RasterCalculatorInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"栅格计算失败: {result.error or '未知错误'}"
+
+        expression = result.metadata.get("expression", "")
+        width = result.metadata.get("width", "未知")
+        height = result.metadata.get("height", "未知")
+        return f"已按表达式 {expression} 完成栅格计算，输出尺寸为{width}x{height}。"
+
     async def execute(self, input_data: RasterCalculatorInput) -> ToolResult:
         """
         原子级栅格计算核心逻辑：读取多幅栅格波段并按表达式逐像元计算，写出新的 GeoTIFF

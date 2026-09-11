@@ -48,6 +48,16 @@ class CountTool(BaseTool):
     input_model = CountInput
     output_model = ToolResult
 
+    def build_fact(self, result: ToolResult) -> str:
+        if not result.success:
+            return f"数量统计失败: {result.error or '未知错误'}"
+
+        total_count = result.metadata.get("total_count", "未知")
+        group_by = result.metadata.get("group_by")
+        if group_by:
+            return f"已完成数量统计，总要素数为{total_count}，分组字段为 {group_by}。"
+        return f"已完成数量统计，总要素数为{total_count}。"
+
     async def execute(self, input_data: CountInput) -> ToolResult:
         """
         原子级数量统计核心逻辑：直接在内存中基于 GeoDataFrame 执行
