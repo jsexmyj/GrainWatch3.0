@@ -4,7 +4,7 @@ from typing import Any
 from backend.agent.base_schemas import BaseSkillTask
 from backend.infrastructure.tool_manager.registry import ToolRegistry
 from backend.skills.planner_llm_strategy import PlanLLMConfig, PlanLLMStrategy
-from backend.skills.spatial_skill.schemas import ToolPlan
+from backend.skills.base_schemas import ToolPlan
 from backend.skills.spatial_skill.spatial_prompt import build_spatial_planning_prompt
 from backend.utils.logger import get_logger
 from backend.utils.paths import PATHS

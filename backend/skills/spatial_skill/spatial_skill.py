@@ -68,7 +68,7 @@ class SpatialSkill:
         task: SpatialSkillTask, execution: ExecutionResult
     ) -> SpatialSkillEvidence:
         successful_results = [result for result in execution.results if result.success]
-        final_result = successful_results[-1] if successful_results else None
+        # final_result = successful_results[-1] if successful_results else None
         facts: list[str] = []
         for result in successful_results:
             fact = result.fact

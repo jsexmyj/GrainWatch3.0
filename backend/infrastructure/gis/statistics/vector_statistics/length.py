@@ -2,6 +2,7 @@
 from typing import Optional
 
 import geopandas as gpd
+import pandas as pd
 from pydantic import BaseModel, Field, ConfigDict
 
 from backend.infrastructure.tool_manager.base import BaseTool, ToolResult
@@ -36,7 +37,7 @@ class LengthInput(BaseModel):
 # ==========================================
 class LengthTool(BaseTool):
     # 供 Skill 调用的唯一标识
-    name = "length"
+    name = "vector_length"
 
     # 供 Skill/Agent 语义读取的核心描述（保持英文）
     description = (
@@ -48,13 +49,34 @@ class LengthTool(BaseTool):
     input_model = LengthInput
     output_model = ToolResult
 
+    @staticmethod
+    def _format_number(value: float) -> str:
+        text = f"{float(value):.6f}".rstrip("0").rstrip(".")
+        return text if text else "0"
+
     def build_fact(self, result: ToolResult) -> str:
         if not result.success:
             return f"长度计算失败: {result.error or '未知错误'}"
 
+        data = result.data
         field_name = result.metadata.get("length_field_name", "length")
-        feature_count = result.metadata.get("feature_count", "未知")
-        return f"已为{feature_count}个要素计算长度并写入字段 {field_name}。"
+        if not isinstance(data, gpd.GeoDataFrame) or data.empty:
+            return f"长度字段 {field_name} 无可用统计结果。"
+        if field_name not in data.columns:
+            return f"长度字段 {field_name} 不存在，无法生成统计事实。"
+
+        values = pd.to_numeric(data[field_name], errors="coerce").dropna()
+        if values.empty:
+            return f"长度字段 {field_name} 无有效数值。"
+
+        total_value = self._format_number(float(values.sum()))
+        mean_value = self._format_number(float(values.mean()))
+        min_value = self._format_number(float(values.min()))
+        max_value = self._format_number(float(values.max()))
+        return (
+            f"长度统计结果：总长度为{total_value}，平均长度为{mean_value}，"
+            f"最短长度为{min_value}，最长长度为{max_value}。"
+        )
 
     async def execute(self, input_data: LengthInput) -> ToolResult:
         """

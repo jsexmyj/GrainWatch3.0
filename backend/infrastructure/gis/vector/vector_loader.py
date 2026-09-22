@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from pathlib import Path
 
 import geopandas as gpd
 from pydantic import BaseModel, ConfigDict, Field
@@ -38,11 +39,14 @@ class VectorLoadTool(BaseTool):
         if not result.success:
             return f"矢量数据加载失败: {result.error or '未知错误'}"
 
-        source_name = result.metadata.get("source", "").split("/")[-1]
+        source = str(result.metadata.get("source", ""))
+        source_name = Path(source).name if source else ""
         source_type = result.metadata.get("source_type", "unknown")
         feature_count = result.metadata.get("feature_count", "未知")
         if source_name:
-            return f"已从{source_name}文件加载{source_type}数据，共{feature_count}个要素。"
+            return (
+                f"已从{source_name}文件加载{source_type}数据，共{feature_count}个要素。"
+            )
         return f"已加载{source_type}数据，共{feature_count}个要素。"
 
     async def execute(self, input_data: VectorLoadInput) -> ToolResult:

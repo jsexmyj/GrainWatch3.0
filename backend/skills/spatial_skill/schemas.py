@@ -40,56 +40,6 @@ class SpatialSkillEvidence(BaseSkillEvidence):
     )
 
 
-class ToolStep(BaseModel):
-    """顺序计划中的一次原子工具调用。"""
-
-    step_id: str = Field(..., min_length=1, description="计划内唯一的步骤标识。")
-    tool_name: str = Field(..., min_length=1, description="已注册工具的名称。")
-    arguments: dict[str, Any] = Field(
-        default_factory=dict,
-        description="工具输入参数；支持 ${steps.<step_id>.data} 引用前序结果。",
-    )
-    output_key: str | None = Field(
-        default=None, description="将本步骤 ToolResult 写入运行时上下文的键。"
-    )
-    on_failure: Literal["raise", "retry", "warn", "stop", "continue"] = Field(
-        default="raise",
-        description=(
-            "本步骤失败后的处理策略。"
-            "raise=立即抛错；retry=可恢复错误进行重试后抛错；"
-            "warn=记录告警并继续。"
-            "兼容旧值：stop->raise，continue->warn。"
-        ),
-    )
-
-    @field_validator("on_failure", mode="before")
-    @classmethod
-    def normalize_on_failure(cls, value: str) -> str:
-        legacy_mapping = {
-            "stop": "raise",
-            "continue": "warn",
-        }
-        return legacy_mapping.get(value, value)
-
-
-class ToolPlan(BaseModel):
-    """由 Planner 生成、由 Executor 按声明顺序执行的工具调用计划。"""
-
-    plan_id: str = Field(..., min_length=1, description="计划唯一标识。")
-    steps: list[ToolStep] = Field(
-        ..., min_length=1, description="按执行顺序排列的工具步骤。"
-    )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="规划来源和约束信息。"
-    )
-
-    @model_validator(mode="after")
-    def validate_unique_step_ids(self) -> "ToolPlan":
-        step_ids = [step.step_id for step in self.steps]
-        if len(step_ids) != len(set(step_ids)):
-            raise ValueError("ToolPlan 中的 step_id 必须唯一。")
-        return self
-
 
 class ExecutionResult(BaseModel):
     """Executor 返回的执行轨迹与运行时上下文。"""

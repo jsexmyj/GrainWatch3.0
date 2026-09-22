@@ -10,6 +10,22 @@ def _detect_project_root() -> Path:
     """
     return Path(__file__).resolve().parents[2]
 
+def resolve_file_path(file_path: str) -> Path:
+    """
+    基于 PATHS.root 进行文件路径解析
+    """
+
+    path = Path(file_path)
+    if not path.is_absolute():
+        path = (PATHS.root / path).resolve()
+    else:
+        path = path.resolve()
+
+    if not path.exists():
+        raise FileNotFoundError(f"文件不存在: {path}")
+    if not path.is_file():
+        raise IsADirectoryError(f"输入路径不是文件: {path}")
+    return path
 
 class PathManager:
     """

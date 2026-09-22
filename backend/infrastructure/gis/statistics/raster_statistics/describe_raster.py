@@ -1,10 +1,11 @@
 # tool_system/tools/describe_raster.py
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field, ConfigDict
 
 from backend.infrastructure.tool_manager.base import BaseTool, ToolResult
+from backend.utils.paths import resolve_file_path
 
 
 # ==========================================
@@ -53,14 +54,49 @@ class DescribeRasterTool(BaseTool):
     input_model = DescribeRasterInput
     output_model = ToolResult
 
+    @staticmethod
+    def _format_number(value: Any) -> str:
+        if isinstance(value, (int,)):
+            return str(value)
+        if isinstance(value, float):
+            text = f"{value:.6f}".rstrip("0").rstrip(".")
+            return text if text else "0"
+        return str(value)
+
     def build_fact(self, result: ToolResult) -> str:
         if not result.success:
             return f"栅格元信息读取失败: {result.error or '未知错误'}"
 
-        width = result.metadata.get("width", "未知")
-        height = result.metadata.get("height", "未知")
-        band_count = result.metadata.get("band_count", "未知")
-        return f"已读取栅格元信息：尺寸{width}x{height}，波段数为{band_count}。"
+        data = result.data
+        if not isinstance(data, dict):
+            return "栅格元信息结果为空。"
+
+        width = data.get("width")
+        height = data.get("height")
+        band_count = data.get("band_count")
+        if width is None or height is None or band_count is None:
+            return "栅格关键元信息缺失。"
+
+        pixel_total = int(width) * int(height)
+        crs = data.get("crs") or "未知坐标系"
+        base_fact = (
+            f"栅格尺寸为{width}x{height}，像元总数为{pixel_total}，"
+            f"波段数为{band_count}，坐标系为{crs}。"
+        )
+
+        band_statistics = data.get("band_statistics")
+        if isinstance(band_statistics, dict) and band_statistics:
+            first_key = next(iter(band_statistics))
+            first_stats = band_statistics.get(first_key, {})
+            if isinstance(first_stats, dict):
+                min_value = self._format_number(first_stats.get("min", "未知"))
+                max_value = self._format_number(first_stats.get("max", "未知"))
+                return (
+                    f"{base_fact}{first_key}最小值为{min_value}，"
+                    f"最大值为{max_value}。"
+                )
+
+        return base_fact
 
     async def execute(self, input_data: DescribeRasterInput) -> ToolResult:
         """
@@ -69,9 +105,7 @@ class DescribeRasterTool(BaseTool):
         try:
             import rasterio
 
-            path = Path(input_data.source)
-            if not path.exists():
-                raise FileNotFoundError(f"栅格文件不存在: {path}")
+            path = resolve_file_path(str(input_data.source))
 
             with rasterio.open(path) as dataset:
                 bounds = dataset.bounds
@@ -92,6 +126,11 @@ class DescribeRasterTool(BaseTool):
                         "ymax": float(bounds.top),
                     },
                     "transform": tuple(dataset.transform)[:6],
+                    "resolution": [
+                        float(abs(dataset.transform.a)),
+                        float(abs(dataset.transform.e)),
+                    ],
+                    "source": str(path),
                 }
 
                 # 可选的逐波段统计信息
@@ -117,7 +156,7 @@ class DescribeRasterTool(BaseTool):
                 success=True,
                 tool_name=self.name,
                 result_type="metadata",  # 结果为元信息描述，非矢量/栅格数据本身
-                data=None,
+                data=metadata,
                 metadata=metadata,
             )
 

@@ -56,13 +56,19 @@ class ToolStep(BaseModel):
     tool_name: str = Field(..., min_length=1, description="已注册工具的名称。")
     arguments: dict[str, Any] = Field(
         default_factory=dict,
-        description="工具输入参数；可通过 ${steps.<step_id>.data} 引用前序结果。",
+        description="工具输入参数；支持 ${steps.<step_id>.data} 引用前序结果。",
     )
     output_key: str | None = Field(
         default=None, description="将本步骤 ToolResult 写入运行时上下文的键。"
     )
-    on_failure: Literal["stop", "continue"] = Field(
-        default="stop", description="本步骤失败后的处理策略。"
+    on_failure: Literal["raise", "retry", "warn", "stop", "continue"] = Field(
+        default="raise",
+        description=(
+            "本步骤失败后的处理策略。"
+            "raise=立即抛错；retry=可恢复错误进行重试后抛错；"
+            "warn=记录告警并继续。"
+            "兼容旧值：stop->raise，continue->warn。"
+        ),
     )
 
 
