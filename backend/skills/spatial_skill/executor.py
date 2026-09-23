@@ -6,8 +6,7 @@ from pydantic import ValidationError
 
 from backend.infrastructure.tool_manager.base import ToolResult
 from backend.infrastructure.tool_manager.manager import ToolManager
-from backend.skills.base_schemas import ToolPlan,ToolStep
-from backend.skills.spatial_skill.schemas import ExecutionResult
+from backend.skills.base_schemas import ToolPlan,ToolStep,ExecutionResult
 from backend.utils.logger import get_logger
 
 _STEP_REFERENCE = re.compile(r"^\$\{steps\.([^.}]+)\.data\}$")

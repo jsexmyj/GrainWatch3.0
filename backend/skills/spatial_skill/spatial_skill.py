@@ -7,10 +7,10 @@ from backend.infrastructure.tool_manager.loader import ToolLoader
 from backend.infrastructure.tool_manager.manager import ToolManager
 from backend.infrastructure.tool_manager.registry import ToolRegistry
 from backend.infrastructure.tool_manager.base import ToolResult
+from backend.skills.base_schemas import ExecutionResult
 from backend.skills.spatial_skill.executor import SpatialExecutor
 from backend.skills.spatial_skill.planner import SpatialSkillPlanner
 from backend.skills.spatial_skill.schemas import (
-    ExecutionResult,
     SpatialSkillEvidence,
     SpatialSkillTask,
 )

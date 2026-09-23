@@ -9,6 +9,8 @@ from typing import AsyncGenerator, Dict, Any
 import pytest
 import pytest_asyncio
 
+from backend.skills.base_schemas import ExecutionResult
+
 # 1. 自动处理项目根目录路径
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -25,7 +27,7 @@ from backend.infrastructure.tool_manager.registry import ToolRegistry
 from backend.skills.planner_llm_strategy import PlanLLMConfig
 from backend.skills.spatial_skill.executor import SpatialExecutor
 from backend.skills.spatial_skill.planner import SpatialSkillPlanner
-from backend.skills.spatial_skill.schemas import ExecutionResult, SpatialSkillTask
+from backend.skills.spatial_skill.schemas import  SpatialSkillTask
 from backend.skills.spatial_skill.spatial_skill import SpatialSkill
 from backend.utils.paths import PATHS
 

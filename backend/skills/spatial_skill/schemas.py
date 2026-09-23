@@ -41,11 +41,4 @@ class SpatialSkillEvidence(BaseSkillEvidence):
 
 
 
-class ExecutionResult(BaseModel):
-    """Executor 返回的执行轨迹与运行时上下文。"""
 
-    success: bool
-    results: list[ToolResult] = Field(default_factory=list)
-    context: dict[str, Any] = Field(default_factory=dict)
-    failed_step_id: str | None = None
-    warnings: list[str] = Field(default_factory=list)

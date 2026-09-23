@@ -122,9 +122,13 @@ class ValueCountsTool(BaseTool):
                 value_counts = value_counts.head(input_data.top_n)
 
             total_count = int(len(gdf))
+            denominator_count = (
+                int(gdf[field].notna().sum()) if input_data.dropna else total_count
+            )
+            denominator_scope = "valid_records" if input_data.dropna else "all_records"
             ratio_series = (
-                (value_counts / total_count)
-                if total_count > 0
+                (value_counts / denominator_count)
+                if denominator_count > 0
                 else value_counts.astype(float)
             )
 
@@ -141,12 +145,16 @@ class ValueCountsTool(BaseTool):
             freq_df = value_counts.rename_axis(field).reset_index(name="count")
             if input_data.include_ratio:
                 freq_df["ratio"] = (
-                    (freq_df["count"] / total_count) if total_count > 0 else 0.0
+                    (freq_df["count"] / denominator_count)
+                    if denominator_count > 0
+                    else 0.0
                 )
 
             metadata = {
                 "field": field,
                 "total_count": total_count,
+                "denominator_count": denominator_count,
+                "denominator_scope": denominator_scope,
                 "category_count": int(gdf[field].nunique(dropna=input_data.dropna)),
                 "top_n": input_data.top_n,
                 "include_ratio": input_data.include_ratio,

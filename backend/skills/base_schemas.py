@@ -3,6 +3,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 from backend.agent.base_schemas import BaseTask, DataRef
+from backend.infrastructure.tool_manager.base import ToolResult
 
 
 class SkillExecutionResult(BaseModel):
@@ -111,3 +112,12 @@ class BaseSkillEvidence(BaseModel):
         description="Skill 产生的可复用结果引用，例如 result layer、统计表文件",
     )
     error: str | None = Field(default=None, description="工具执行失败时的错误信息")
+
+class ExecutionResult(BaseModel):
+    """Executor 返回的执行轨迹与运行时上下文。"""
+
+    success: bool
+    results: list[ToolResult] = Field(default_factory=list)
+    context: dict[str, Any] = Field(default_factory=dict)
+    failed_step_id: str | None = None
+    warnings: list[str] = Field(default_factory=list)

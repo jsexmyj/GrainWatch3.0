@@ -74,12 +74,31 @@ class RasterClassAreaTool(BaseTool):
         return "坐标单位平方"
 
     @staticmethod
-    def _unit_factor(area_unit: str) -> float:
+    def _unit_factor(area_unit: str, linear_unit_to_metre: float) -> float:
         if area_unit == "hectare":
-            return 1.0 / 10000.0
+            return linear_unit_to_metre**2 / 10000.0
         if area_unit == "square_kilometer":
-            return 1.0 / 1000000.0
+            return linear_unit_to_metre**2 / 1000000.0
         return 1.0
+
+    @staticmethod
+    def _resolve_linear_unit(dataset: Any, area_unit: str) -> tuple[str | None, float]:
+        crs = dataset.crs
+        if area_unit == "map_unit2":
+            return (crs.linear_units if crs and crs.is_projected else None, 1.0)
+        if crs is None:
+            raise ValueError("换算为公顷或平方千米前必须确认栅格 CRS")
+        if not crs.is_projected:
+            raise ValueError("换算为公顷或平方千米需要使用投影 CRS，而非地理坐标 CRS")
+
+        try:
+            linear_unit, linear_unit_to_metre = crs.linear_units_factor
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError("无法确认投影 CRS 的线性单位，不能进行面积换算") from exc
+
+        if linear_unit_to_metre <= 0:
+            raise ValueError("投影 CRS 的线性单位换算系数无效，不能进行面积换算")
+        return str(linear_unit), float(linear_unit_to_metre)
 
     def build_fact(self, result: ToolResult) -> str:
         if not result.success:
@@ -119,6 +138,10 @@ class RasterClassAreaTool(BaseTool):
                 res_x = float(abs(dataset.transform.a))
                 res_y = float(abs(dataset.transform.e))
                 pixel_area_native = res_x * res_y
+                linear_unit, linear_unit_to_metre = self._resolve_linear_unit(
+                    dataset, input_data.area_unit
+                )
+                crs_text = dataset.crs.to_string() if dataset.crs else None
 
                 if input_data.include_nodata:
                     raw_values = dataset.read(input_data.band, masked=False).ravel()
@@ -139,16 +162,20 @@ class RasterClassAreaTool(BaseTool):
                         "band": input_data.band,
                         "include_nodata": input_data.include_nodata,
                         "nodata": nodata_value,
+                        "crs": crs_text,
+                        "linear_unit": linear_unit,
+                        "linear_unit_to_metre": linear_unit_to_metre,
                         "resolution": [res_x, res_y],
                         "pixel_area_native": pixel_area_native,
                         "area_unit": input_data.area_unit,
                         "total_area": 0.0,
+                        "returned_area": 0.0,
                         "rows": [],
                     },
                 )
 
             values, counts = np.unique(valid_values, return_counts=True)
-            unit_factor = self._unit_factor(input_data.area_unit)
+            unit_factor = self._unit_factor(input_data.area_unit, linear_unit_to_metre)
 
             area_df = pd.DataFrame(
                 {
@@ -158,9 +185,12 @@ class RasterClassAreaTool(BaseTool):
             )
             area_df["area"] = area_df["pixel_count"] * pixel_area_native * unit_factor
             area_df = area_df.sort_values(by="area", ascending=False)
+            total_area = float(area_df["area"].sum())
 
             if input_data.top_n is not None:
                 area_df = area_df.head(input_data.top_n).copy()
+
+            returned_area = float(area_df["area"].sum())
 
             rows = [
                 {
@@ -176,10 +206,14 @@ class RasterClassAreaTool(BaseTool):
                 "band": input_data.band,
                 "include_nodata": input_data.include_nodata,
                 "nodata": self._to_python_scalar(nodata_value),
+                "crs": crs_text,
+                "linear_unit": linear_unit,
+                "linear_unit_to_metre": linear_unit_to_metre,
                 "resolution": [res_x, res_y],
                 "pixel_area_native": pixel_area_native,
                 "area_unit": input_data.area_unit,
-                "total_area": float(area_df["area"].sum()),
+                "total_area": total_area,
+                "returned_area": returned_area,
                 "rows": rows,
             }
 
