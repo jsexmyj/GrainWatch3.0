@@ -83,7 +83,7 @@ class BaseAgentEvidence(BaseModel):
     status: Literal["success", "partial", "failed"] = Field(
         description="Agent 执行状态"
     )
-    summary: str = Field(description="当前 Agent 对执行结果的简要概括")
+    # summary: str = Field(description="当前 Agent 对执行结果的简要概括")
     facts: list[str] = Field(
         default_factory=list, description="当前 Agent 产生的关键事实"
     )
