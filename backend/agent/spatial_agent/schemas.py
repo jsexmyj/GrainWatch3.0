@@ -1,6 +1,6 @@
 """空间子智能体的委托任务、技能计划、私有状态与返回证据。"""
 
-from datetime import date, datetime
+from datetime import date
 from graphlib import CycleError, TopologicalSorter
 from typing import Any, Literal
 
@@ -81,48 +81,6 @@ class SkillPlan(BaseModel):
         return self
 
 
-class SkillExecutionState(BaseModel):
-    """一次技能调用在子智能体内的执行记录。"""
-
-    status: Literal["pending", "running", "success", "partial", "failed", "skipped"] = (
-        Field(
-            default="pending",
-            description="该步骤的状态，依次可取待执行、执行中、成功、部分成功、失败或跳过。",
-        )
-    )
-    errors: list[str] = Field(
-        default_factory=list, description="按发生顺序记录该步骤历次执行的错误信息。"
-    )
-    output_refs: list[DataRef] = Field(
-        default_factory=list, description="该步骤已生成、可供后续步骤使用的数据引用。"
-    )
-
-
-class RecoveryRecord(BaseModel):
-    """针对一个技能步骤的局部恢复记录。"""
-
-    step_id: str = Field(description="需要局部恢复的技能调用步骤标识。")
-    reason: str = Field(description="触发本次恢复的失败原因。")
-    action: str = Field(description="实际采取的恢复措施，例如更换输入图层后重试。")
-    outcome: str = Field(description="本次恢复的结果，包括是否可以继续执行及遗留问题。")
-
-
-class SpatialAgentState(BaseModel):
-    """由空间子智能体维护的私有执行状态。"""
-
-    task: SpatialAgentTask = Field(description="本次执行对应的主智能体委托任务。")
-    skill_plan: SkillPlan | None = Field(
-        default=None, description="当前技能调用计划，尚未规划时为空。"
-    )
-    step_states: dict[str, SkillExecutionState] = Field(
-        default_factory=dict,
-        description="各技能调用的执行记录，以计划中的步骤标识为键。",
-    )
-    recovery_history: list[RecoveryRecord] = Field(
-        default_factory=list, description="按发生顺序保存的局部恢复记录。"
-    )
-
-
 class SpatialAgentEvidence(BaseAgentEvidence):
     """空间子智能体汇总技能执行结果后返回主智能体的证据。"""
 
@@ -131,16 +89,6 @@ class SpatialAgentEvidence(BaseAgentEvidence):
     )
     status: Literal["success", "partial", "failed"] = Field(
         description="整体执行结果，分别表示成功、部分成功或失败。"
-    )
-    spatial_scope: dict[str, Any] = Field(
-        default_factory=dict, description="证据实际覆盖的空间范围及坐标系。"
-    )
-    operation_summary: dict[str, Any] = Field(
-        default_factory=dict,
-        description="产生空间事实的操作及参数，例如缓冲距离和相交条件。",
-    )
-    statistics_summary: dict[str, Any] = Field(
-        default_factory=dict, description="量化分析得到的统计指标、数值及单位。"
     )
     output_refs: list[DataRef] = Field(
         default_factory=list,
